@@ -5,11 +5,14 @@
         <div>购物街</div>
       </template>
     </nav-bar>
-    <home-swiper :bannerList="bannerList" />
-    <home-recommend :recommendList="recommendList"/>
-    <home-feature/>
-    <tab-control :titles="titles" class="tabcontrol" @tabClick="tabClick"/>
-    <goods-list :goodsList="showGoods"/>
+    <scroll class="content" ref="scroll" :probeType="3" :pull-up-load="true" @scroll="contentScroll" @pullingUp="pullingUp">
+      <home-swiper :bannerList="bannerList" />
+      <home-recommend :recommendList="recommendList"/>
+      <home-feature/>
+      <tab-control :titles="titles" class="tabcontrol" @tabClick="tabClick"/>
+      <goods-list :goodsList="showGoods"/>
+    </scroll>
+    <back-top v-show="isShowBackTop" @click.native="backTop"/>
   </div>
 </template>
 <script>
@@ -22,6 +25,8 @@ import HomeFeature from './childComp/HomeFeature.vue'
 import NavBar from 'components/common/navbar/navbar'
 import TabControl from 'components/content/tabControl/TabControl'
 import GoodsList from 'components/content/goodsList/GoodsList'
+import Scroll from 'components/common/scroll/Scroll'
+import BackTop from 'components/content/backTop/BackTop'
 
 export default {
   name: 'Home', 
@@ -33,6 +38,8 @@ export default {
     NavBar,
     TabControl,
     GoodsList,
+    Scroll,
+    BackTop,
   },
   data () {
     return {
@@ -45,7 +52,8 @@ export default {
         new: {page: 0, list: []},
         sell: {page: 0, list: []},
       },
-      currentType: 'pop'
+      currentType: 'pop',
+      isShowBackTop: false,
     }
   },
   computed: {
@@ -71,6 +79,8 @@ export default {
       getGoodsList(type, page).then(res => {
         this.goods[type].list.push(...res.data.list);
         this.goods[type].page++;
+        this.$refs.scroll.finishPullUp()
+        this.$refs.scroll.refresh()
       })
     },
 
@@ -86,16 +96,24 @@ export default {
           this.currentType = 'sell';
           break
       }
+    },
+    backTop() {
+      this.$refs.scroll.scrollTo(0, 0, 500)
+    },
+    contentScroll(position) {
+      this.isShowBackTop = (-position.y) > 1000;
+    },
+    pullingUp() {
+      this.getGoods(this.currentType)
     }
-    /* swiperImgLoad() {
-      this.tabOffsetTop = this.$refs.tabControl2.$el.offsetTop
-    } */
   }
 }
 </script>
 <style scoped>
   #home {
-    padding-top: 44px;
+    /* padding-top: 44px; */
+    position: relative;
+    height: 100vh;
   }
   .home-nav {
     background: var(--color-tint);
@@ -111,5 +129,12 @@ export default {
     top: 44px;
     background: #fff;
     z-index: 3;
+  }
+  .content {
+    /* height: calc(100% - 49px); */
+    position: absolute;
+    top: 44px;
+    bottom: 49px;
+    overflow: hidden;
   }
 </style>
